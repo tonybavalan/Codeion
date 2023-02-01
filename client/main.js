@@ -1,11 +1,72 @@
 import bot from '/assets/bot.svg';
 import user from '/assets/user.svg';
 
-const form = document.querySelector('form');
-const chatContainer = document.querySelector('#chat_container');
-
+//Globals
 let loadInterval;
 
+//Constants
+const form = document.querySelector('form');
+const chatContainer = document.querySelector('#chat_container');
+const btn = document.querySelector('#microphone');
+
+//Speech Recognition
+const speechRecognition = window.speechRecognition || window.webkitSpeechRecognition;
+const recognition = new speechRecognition();
+
+recognition.lang = "en-Us";
+recognition.interimResults = false;
+
+//Microphone events
+btn.addEventListener("click", () => {
+  recognition.start();
+});
+
+recognition.onresult = async function (event) {
+  const last = event.results.length - 1;
+  const text = event.results[last][0].transcript;
+
+  chatContainer.innerHTML += chatStripe(false, text);
+
+  //generate bot's chatStripe
+  let uniqueId = generateUniqueId();
+  chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
+
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  const messageDiv = document.getElementById(uniqueId);
+
+  loader(messageDiv);
+
+  //fetch data from server -> bot's response
+  const response = await fetch('http://localhost:5000', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      prompt: text
+    })
+  });
+
+  clearInterval(loadInterval);
+
+  messageDiv.innerHTML = '';
+
+  if(response.ok) {
+    let data = await response.json();
+    let parsedData = data.bot.trim();
+
+    typeText(messageDiv, parsedData);
+  } else {
+    const err = await response.text();
+
+    messageDiv.innerHTML = "Something went wrong";
+
+    alert(err);
+  }
+}
+
+// Functions
 function loader(element) {
   element.textContent = '';
 
@@ -75,7 +136,7 @@ const handleSubmit = async (event) =>{
   loader(messageDiv);
 
   //fetch data from server -> bot's response
-  const response = await fetch('https://codex-4yg3.onrender.com', {
+  const response = await fetch('http://localhost:5000', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -104,8 +165,8 @@ const handleSubmit = async (event) =>{
 }
 
 form.addEventListener('submit', handleSubmit);
-form.addEventListener('keyup', (event) => {
-  if(event.keyCode  === '13'){
-    handleSubmit(event);
-  }
-});
+// form.addEventListener('keyup', (event) => {
+//   if(event.keyCode  === '13'){
+//     handleSubmit(event);
+//   }
+// });
