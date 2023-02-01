@@ -75,7 +75,7 @@ const handleSubmit = async (event) =>{
   loader(messageDiv);
 
   //fetch data from server -> bot's response
-  const response = await fetch('https://codex-4yg3.onrender.com', {
+  const response = await fetch('http://localhost:5000', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -104,8 +104,8 @@ const handleSubmit = async (event) =>{
 }
 
 form.addEventListener('submit', handleSubmit);
-form.addEventListener('keyup', (event) => {
-  if(event.keyCode  === '13'){
-    handleSubmit(event);
-  }
-});
+// form.addEventListener('keyup', (event) => {
+//   if(event.keyCode  === '13'){
+//     handleSubmit(event);
+//   }
+// });
