@@ -9,27 +9,26 @@ const form = document.querySelector('form');
 const chatContainer = document.querySelector('#chat_container');
 const mic = document.querySelector('#microphone');
 const micAnime = document.querySelector('#animation');
+
+const speechRecognition = window.speechRecognition || window.webkitSpeechRecognition;
+const recognition = new speechRecognition();
+
+const speechSynthesis = window.speechSynthesis;
 // const mute = document.querySelector('#mute');
 
 //Microphone events
 mic.addEventListener("click", () => {
   mic.style.display = "none";
   micAnime.style.display = "block";
-  const speechRecognition = window.speechRecognition || window.webkitSpeechRecognition;
-  const recognition = new speechRecognition();
   recognition.lang = "en-GB";
+
   recognition.interimResults = false;
   recognition.start();
-
   recognition.onend = function () {
     mic.style.display = "block";
     micAnime.style.display = "none";
   };
-
-
   recognition.onresult = async (event) => {
-    // mic.style.display = "block";
-    // micAnime.style.display = "none";
     const last = event.results.length - 1;
     const text = event.results[last][0].transcript;
 
@@ -68,7 +67,7 @@ mic.addEventListener("click", () => {
 
       if ('speechSynthesis' in window) {
         let speech = new SpeechSynthesisUtterance(parsedData);
-        speech.lang = 'en-US';
+        speech.lang = 'en-GB';
 
         speechUtteranceChunker(speech, {
           chunkLength: 120
@@ -86,10 +85,13 @@ mic.addEventListener("click", () => {
   }
 });
 
-//Speaker events
-// mute.addEventListener("click", () => {
-//   window.speechSynthesis.cancel();
-// });
+micAnime.addEventListener("click", () => {
+  recognition.abort();
+  speechSynthesis.cancel();
+
+  mic.style.display = "block";
+  micAnime.style.display = "none";
+});
 
 // Functions
 function loader(element) {
@@ -147,7 +149,6 @@ const handleSubmit = async (event) => {
 
   //generate user's chatStripe
   chatContainer.innerHTML += chatStripe(false, data.get('prompt'));
-
   form.reset();
 
   //generate bot's chatStripe
@@ -183,14 +184,13 @@ const handleSubmit = async (event) => {
 
     if ('speechSynthesis' in window) {
       let speech = new SpeechSynthesisUtterance(parsedData);
-      speech.lang = 'en-US';
+      speech.lang = 'en-GB';
 
       speechUtteranceChunker(speech, {
         chunkLength: 120
       }, function () {
         console.log('done');
       });
-
     } else {
       alert('Your browser does not support Web Speech API');
     }
