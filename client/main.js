@@ -80,11 +80,6 @@ mute.addEventListener("click", () => {
   window.speechSynthesis.cancel();
 });
 
-//Speaker events
-mute.addEventListener("click", () => {
-  window.speechSynthesis.cancel();
-});
-
 // Functions
 function loader(element) {
   element.textContent = '';
