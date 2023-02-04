@@ -8,17 +8,28 @@ let loadInterval;
 const form = document.querySelector('form');
 const chatContainer = document.querySelector('#chat_container');
 const mic = document.querySelector('#microphone');
-const mute = document.querySelector('#mute');
+const micAnime = document.querySelector('#animation');
+// const mute = document.querySelector('#mute');
 
 //Microphone events
 mic.addEventListener("click", () => {
+  mic.style.display = "none";
+  micAnime.style.display = "block";
   const speechRecognition = window.speechRecognition || window.webkitSpeechRecognition;
   const recognition = new speechRecognition();
-  recognition.lang = "en-Us";
+  recognition.lang = "en-GB";
   recognition.interimResults = false;
   recognition.start();
 
+  recognition.onend = function () {
+    mic.style.display = "block";
+    micAnime.style.display = "none";
+  };
+
+
   recognition.onresult = async (event) => {
+    // mic.style.display = "block";
+    // micAnime.style.display = "none";
     const last = event.results.length - 1;
     const text = event.results[last][0].transcript;
 
@@ -76,9 +87,9 @@ mic.addEventListener("click", () => {
 });
 
 //Speaker events
-mute.addEventListener("click", () => {
-  window.speechSynthesis.cancel();
-});
+// mute.addEventListener("click", () => {
+//   window.speechSynthesis.cancel();
+// });
 
 // Functions
 function loader(element) {
