@@ -1,70 +1,86 @@
 import bot from '/assets/bot.svg';
 import user from '/assets/user.svg';
-
-//Globals
+import speechUtteranceChunker from './chunkify';
+//Global variables
 let loadInterval;
 
-//Constants
+//Global constants
 const form = document.querySelector('form');
 const chatContainer = document.querySelector('#chat_container');
-const btn = document.querySelector('#microphone');
-
-//Speech Recognition
-const speechRecognition = window.speechRecognition || window.webkitSpeechRecognition;
-const recognition = new speechRecognition();
-
-recognition.lang = "en-Us";
-recognition.interimResults = false;
+const mic = document.querySelector('#microphone');
+const mute = document.querySelector('#mute');
 
 //Microphone events
-btn.addEventListener("click", () => {
+mic.addEventListener("click", () => {
+  const speechRecognition = window.speechRecognition || window.webkitSpeechRecognition;
+  const recognition = new speechRecognition();
+  recognition.lang = "en-Us";
+  recognition.interimResults = false;
   recognition.start();
+
+  recognition.onresult = async (event) => {
+    const last = event.results.length - 1;
+    const text = event.results[last][0].transcript;
+
+    chatContainer.innerHTML += chatStripe(false, text);
+
+    //generate bot's chatStripe
+    let uniqueId = generateUniqueId();
+    chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
+
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    const messageDiv = document.getElementById(uniqueId);
+
+    loader(messageDiv);
+
+    //fetch data from server -> bot's response
+    const response = await fetch('http://localhost:5000', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: text
+      })
+    });
+
+    clearInterval(loadInterval);
+
+    messageDiv.innerHTML = '';
+
+    if (response.ok) {
+      let data = await response.json();
+      let parsedData = data.bot.trim();
+
+      typeText(messageDiv, parsedData);
+
+      if ('speechSynthesis' in window) {
+        let speech = new SpeechSynthesisUtterance(parsedData);
+        speech.lang = 'en-US';
+
+        speechUtteranceChunker(speech, {
+          chunkLength: 120
+        }, function () {
+          console.log('done');
+        });
+      } else {
+        alert('Your browser does not support Web Speech API');
+      }
+    } else {
+      const err = await response.text();
+
+      messageDiv.innerHTML = "Something went wrong";
+
+      alert(err);
+    }
+  }
 });
 
-recognition.onresult = async function (event) {
-  const last = event.results.length - 1;
-  const text = event.results[last][0].transcript;
-
-  chatContainer.innerHTML += chatStripe(false, text);
-
-  //generate bot's chatStripe
-  let uniqueId = generateUniqueId();
-  chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
-
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-
-  const messageDiv = document.getElementById(uniqueId);
-
-  loader(messageDiv);
-
-  //fetch data from server -> bot's response
-  const response = await fetch('http://localhost:5000', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      prompt: text
-    })
-  });
-
-  clearInterval(loadInterval);
-
-  messageDiv.innerHTML = '';
-
-  if(response.ok) {
-    let data = await response.json();
-    let parsedData = data.bot.trim();
-
-    typeText(messageDiv, parsedData);
-  } else {
-    const err = await response.text();
-
-    messageDiv.innerHTML = "Something went wrong";
-
-    alert(err);
-  }
-}
+//Speaker events
+mute.addEventListener("click", () => {
+  window.speechSynthesis.cancel();
+});
 
 // Functions
 function loader(element) {
@@ -73,7 +89,7 @@ function loader(element) {
   loadInterval = setInterval(() => {
     element.textContent += '.';
 
-    if(element.textContent === '....'){
+    if (element.textContent === '....') {
       element.textContent = '';
     }
   }, 300);
@@ -83,12 +99,12 @@ function typeText(element, text) {
   let index = 0
 
   let interval = setInterval(() => {
-      if (index < text.length) {
-          element.innerHTML += text.charAt(index)
-          index++
-      } else {
-          clearInterval(interval)
-      }
+    if (index < text.length) {
+      element.innerHTML += text.charAt(index)
+      index++
+    } else {
+      clearInterval(interval)
+    }
   }, 20)
 }
 
@@ -115,7 +131,7 @@ function chatStripe(isAi, value, uniqueId) {
   );
 }
 
-const handleSubmit = async (event) =>{
+const handleSubmit = async (event) => {
   event.preventDefault();
 
   const data = new FormData(form);
@@ -150,11 +166,33 @@ const handleSubmit = async (event) =>{
 
   messageDiv.innerHTML = '';
 
-  if(response.ok) {
+  if (response.ok) {
     let data = await response.json();
     let parsedData = data.bot.trim();
 
     typeText(messageDiv, parsedData);
+
+    // if (parsedData.length <= 317) {
+      if ('speechSynthesis' in window) {
+        // const speechSynthesis = window.speechSynthesis;
+        let speech = new SpeechSynthesisUtterance(parsedData);
+        speech.lang = 'en-US';
+
+        speechUtteranceChunker(speech, {
+          chunkLength: 120
+        }, function () {
+          //some code to execute when done
+          console.log('done');
+          // speechSynthesis.speak(speech);
+        });
+        // speechSynthesis.cancel();
+      } else {
+        alert('Your browser does not support Web Speech API');
+      }
+    // } else {
+      // alert('response has more than 317 characters');
+    // }
+
   } else {
     const err = await response.text();
 
