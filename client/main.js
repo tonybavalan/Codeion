@@ -1,6 +1,7 @@
 import bot from '/assets/bot.svg';
 import user from '/assets/user.svg';
-import speechUtteranceChunker from './chunkify';
+import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
+
 //Global variables
 let loadInterval;
 
@@ -10,11 +11,19 @@ const chatContainer = document.querySelector('#chat_container');
 const mic = document.querySelector('#microphone');
 const micAnime = document.querySelector('#animation');
 
+//Web speech api recognition constants
 const speechRecognition = window.speechRecognition || window.webkitSpeechRecognition;
 const recognition = new speechRecognition();
 
-const speechSynthesis = window.speechSynthesis;
-// const mute = document.querySelector('#mute');
+//Azure text-to-speech synthesis constants
+const key = "61e679f7053340578387cb0899e09eb3";
+const region = "centralindia";
+// authorization for Speech service
+const speechConfig = sdk.SpeechConfig.fromSubscription(key, region);
+speechConfig.SpeechSynthesisLanguage = "en-US";
+speechConfig.SpeechSynthesisVoiceName = "en-Us-AriaNeural";
+// new Speech object
+const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
 //Microphone events
 mic.addEventListener("click", () => {
@@ -65,18 +74,24 @@ mic.addEventListener("click", () => {
 
       typeText(messageDiv, parsedData);
 
-      if ('speechSynthesis' in window) {
-        let speech = new SpeechSynthesisUtterance(parsedData);
-        speech.lang = 'en-GB';
+      synthesizer.speakTextAsync(
+        parsedData,
+        function (result) {
+          // Success function
 
-        speechUtteranceChunker(speech, {
-          chunkLength: 120
-        }, function () {
-          console.log('done');
+          // display status
+          if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+            // load client-side audio control from Azure response
+            const blob = new Blob([result.audioData], { type: "audio/mpeg" });
+            window.URL.createObjectURL(blob);
+          } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
+            // display Error
+            throw (result.errorDetails);
+          }
+          // clean up
+          synthesizer.close();
+          synthesizer = undefined;
         });
-      } else {
-        alert('Your browser does not support Web Speech API');
-      }
     } else {
       const err = await response.text();
       messageDiv.innerHTML = "Something went wrong";
@@ -87,7 +102,6 @@ mic.addEventListener("click", () => {
 
 micAnime.addEventListener("click", () => {
   recognition.abort();
-  speechSynthesis.cancel();
 
   mic.style.display = "block";
   micAnime.style.display = "none";
@@ -182,18 +196,25 @@ const handleSubmit = async (event) => {
 
     typeText(messageDiv, parsedData);
 
-    if ('speechSynthesis' in window) {
-      let speech = new SpeechSynthesisUtterance(parsedData);
-      speech.lang = 'en-GB';
+    synthesizer.speakTextAsync(
+      parsedData,
+      function (result) {
+        // Success function
 
-      speechUtteranceChunker(speech, {
-        chunkLength: 120
-      }, function () {
-        console.log('done');
+        // display status
+        if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+          // load client-side audio control from Azure response
+          audioElement = document.getElementById("clientAudioAzure");
+          const blob = new Blob([result.audioData], { type: audioType });
+          window.URL.createObjectURL(blob);
+        } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
+          // display Error
+          throw (result.errorDetails);
+        }
+        // clean up
+        synthesizer.close();
+        synthesizer = undefined;
       });
-    } else {
-      alert('Your browser does not support Web Speech API');
-    }
   } else {
     const err = await response.text();
     messageDiv.innerHTML = "Something went wrong";
@@ -202,8 +223,3 @@ const handleSubmit = async (event) => {
 }
 
 form.addEventListener('submit', handleSubmit);
-// form.addEventListener('keyup', (event) => {
-//   if(event.keyCode  === '13'){
-//     handleSubmit(event);
-//   }
-// });

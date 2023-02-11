@@ -10,5 +10,8 @@
   },
   "devDependencies": {
     "vite": "^4.0.0"
+  },
+  "dependencies": {
+    "microsoft-cognitiveservices-speech-sdk": "^1.25.1"
   }
 }
