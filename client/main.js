@@ -20,7 +20,6 @@ const key = "61e679f7053340578387cb0899e09eb3";
 const region = "centralindia";
 // authorization for Speech service
 const speechConfig = sdk.SpeechConfig.fromSubscription(key, region);
-speechConfig.SpeechSynthesisLanguage = "en-US";
 speechConfig.SpeechSynthesisVoiceName = "en-Us-AriaNeural";
 // new Speech object
 const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
@@ -70,28 +69,36 @@ mic.addEventListener("click", () => {
 
     if (response.ok) {
       let data = await response.json();
-      let parsedData = data.bot.trim();
+      let phrase = data.bot.trim();
 
-      typeText(messageDiv, parsedData);
+      typeText(messageDiv, phrase);
 
-      synthesizer.speakTextAsync(
-        parsedData,
-        function (result) {
-          // Success function
-
-          // display status
-          if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
-            // load client-side audio control from Azure response
-            const blob = new Blob([result.audioData], { type: "audio/mpeg" });
-            window.URL.createObjectURL(blob);
-          } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
-            // display Error
-            throw (result.errorDetails);
-          }
-          // clean up
-          synthesizer.close();
-          synthesizer = undefined;
-        });
+      if ('speechSynthesis' in window) {
+        synthesizer.speakTextAsync(
+          phrase,
+          result => {
+            // Success function
+  
+            // display status
+            if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+              // load client-side audio control from Azure response
+              const blob = new Blob([result.audioData], { type: "audio/mpeg" });
+              window.URL.createObjectURL(blob);
+            } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
+              // display Error
+              throw (result.errorDetails);
+            }
+            // clean up
+            synthesizer.close();
+            synthesizer = undefined;
+          },
+          error => {
+            console.log(error);
+            synthesizer.close();
+          });
+      } else {
+        alert("Sorry, you're browser does not supports speechSynthesis");
+      }
     } else {
       const err = await response.text();
       messageDiv.innerHTML = "Something went wrong";
@@ -192,29 +199,26 @@ const handleSubmit = async (event) => {
 
   if (response.ok) {
     let data = await response.json();
-    let parsedData = data.bot.trim();
+    let phrase = data.bot.trim();
 
-    typeText(messageDiv, parsedData);
+    typeText(messageDiv, phrase);
 
-    synthesizer.speakTextAsync(
-      parsedData,
-      function (result) {
-        // Success function
-
-        // display status
-        if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
-          // load client-side audio control from Azure response
-          audioElement = document.getElementById("clientAudioAzure");
-          const blob = new Blob([result.audioData], { type: audioType });
-          window.URL.createObjectURL(blob);
-        } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
-          // display Error
-          throw (result.errorDetails);
-        }
-        // clean up
-        synthesizer.close();
-        synthesizer = undefined;
-      });
+    if ('speechSynthesis' in window) {
+      synthesizer.speakTextAsync(
+        phrase,
+        function (result) {
+          if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+            const blob = new Blob([result.audioData], { type: audioType });
+            window.URL.createObjectURL(blob);
+          } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
+            throw (result.errorDetails);
+          }
+          synthesizer.close();
+          synthesizer = undefined;
+        });
+    } else {
+      alert("Sorry, you're browser does not supports speechSynthesis");
+    }
   } else {
     const err = await response.text();
     messageDiv.innerHTML = "Something went wrong";
