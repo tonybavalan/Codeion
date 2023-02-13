@@ -20,7 +20,7 @@ const key = "61e679f7053340578387cb0899e09eb3";
 const region = "centralindia";
 // authorization for Speech service
 const speechConfig = sdk.SpeechConfig.fromSubscription(key, region);
-speechConfig.SpeechSynthesisVoiceName = "en-Us-AriaNeural";
+// speechConfig.SpeechSynthesisVoiceName = "en-Us-AriaNeural";
 // new Speech object
 const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
@@ -73,12 +73,18 @@ mic.addEventListener("click", () => {
 
       typeText(messageDiv, phrase);
 
+      let ssml = `<speak version='1.0' xml:lang='en-US' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='http://www.w3.org/2001/mstts' xmlns:emo='http://www.w3.org/2009/10/emotionml'> \r\n \
+                    <voice name='en-Us-AriaNeural'> \r\n \
+                      <mstts:express-as style="whispering"><prosody rate="-7%" pitch="0%">${phrase}</prosody></mstts:express-as> \r\n \
+                    </voice> \r\n \
+                  </speak>`;
+
       if ('speechSynthesis' in window) {
-        synthesizer.speakTextAsync(
-          phrase,
+        synthesizer.speakSsmlAsync(
+          ssml,
           result => {
             // Success function
-  
+
             // display status
             if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
               // load client-side audio control from Azure response
@@ -203,9 +209,15 @@ const handleSubmit = async (event) => {
 
     typeText(messageDiv, phrase);
 
+    let ssml = `<speak version='1.0' xml:lang='en-US' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='http://www.w3.org/2001/mstts' xmlns:emo='http://www.w3.org/2009/10/emotionml'> \r\n \
+                  <voice name='en-Us-AriaNeural'> \r\n \
+                    <mstts:express-as style="whispering"><prosody rate="-7%" pitch="0%">${phrase}</prosody></mstts:express-as> \r\n \
+                  </voice> \r\n \
+                </speak>`;
+
     if ('speechSynthesis' in window) {
-      synthesizer.speakTextAsync(
-        phrase,
+      synthesizer.speakSsmlAsync(
+        ssml,
         function (result) {
           if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
             const blob = new Blob([result.audioData], { type: audioType });
