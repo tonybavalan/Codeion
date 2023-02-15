@@ -2,25 +2,24 @@ import bot from '/assets/bot.svg';
 import user from '/assets/user.svg';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 
-//Global variables
+// Global variables
 let loadInterval;
 
-//Global constants
+// Global constants
 const form = document.querySelector('form');
 const chatContainer = document.querySelector('#chat_container');
 const mic = document.querySelector('#microphone');
 const micAnime = document.querySelector('#animation');
 
-//Web speech api recognition constants
+// Web speech api recognition constants
 const speechRecognition = window.speechRecognition || window.webkitSpeechRecognition;
 const recognition = new speechRecognition();
 
-//Azure text-to-speech synthesis constants
+// Azure text-to-speech synthesis constants
 const key = "61e679f7053340578387cb0899e09eb3";
 const region = "centralindia";
 // authorization for Speech service
 const speechConfig = sdk.SpeechConfig.fromSubscription(key, region);
-// speechConfig.SpeechSynthesisVoiceName = "en-Us-AriaNeural";
 // new Speech object
 const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
@@ -84,16 +83,15 @@ mic.addEventListener("click", () => {
           ssml,
           result => {
             // Success function
-
             // display status
             if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
               // load client-side audio control from Azure response
               const blob = new Blob([result.audioData], { type: "audio/mpeg" });
               window.URL.createObjectURL(blob);
-            } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
+            } else if (result.reason === sdk.ResultReason.Canceled) {
               // display Error
-              throw (result.errorDetails);
-            }
+              console.log(result.errorDetails);
+            } 
             // clean up
             synthesizer.close();
             synthesizer = undefined;
@@ -222,8 +220,8 @@ const handleSubmit = async (event) => {
           if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
             const blob = new Blob([result.audioData], { type: audioType });
             window.URL.createObjectURL(blob);
-          } else if (result.reason === SpeechSDK.ResultReason.Canceled) {
-            throw (result.errorDetails);
+          } else if (result.reason === sdk.ResultReason.Canceled) {
+            console.log(result.errorDetails);
           }
           synthesizer.close();
           synthesizer = undefined;
