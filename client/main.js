@@ -28,7 +28,7 @@ const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 mic.addEventListener("click", () => {
   mic.style.display = "none";
   micAnime.style.display = "block";
-  recognition.lang = "en-GB";
+  recognition.lang = "en-US";
 
   recognition.interimResults = false;
   recognition.start();
