@@ -1,18 +1,13 @@
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 
-// web speech api recognition constants
-const speechRecognition = window.speechRecognition || window.webkitSpeechRecognition;
-const recognition = new speechRecognition();
-
 // azure text-to-speech synthesis constants
 const key = "61e679f7053340578387cb0899e09eb3";
 const region = "centralindia";
 
 // authorization for Speech service
 const speechConfig = sdk.SpeechConfig.fromSubscription(key, region);
-
-// new Speech object
-const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
+speechConfig.speechRecognitionLanguage = "en-US";
+const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
 
 // global constants
 const recordStopBtn = document.querySelector('.record-stop-track');
@@ -20,28 +15,28 @@ const playPauseBtn = document.querySelector('.play-pause-track');
 const wave = document.getElementById('wave');
 const musicList = [
     {
-        img : 'assets/azure.png',
-        name : 'Demo',
+        img: 'assets/azure.png',
+        name: 'Demo',
         // artist : 'The Kid LAROI, Justin Bieber',
-        music : 'music/stay.mp3'
+        music: 'music/stay.mp3'
     },
     {
-        img : 'images/fallingdown.jpg',
-        name : 'Falling Down',
+        img: 'images/fallingdown.jpg',
+        name: 'Falling Down',
         // artist : 'Wid Cards',
-        music : 'music/fallingdown.mp3'
+        music: 'music/fallingdown.mp3'
     },
     {
-        img : 'images/faded.png',
-        name : 'Faded',
+        img: 'images/faded.png',
+        name: 'Faded',
         // artist : 'Alan Walker',
-        music : 'music/Faded.mp3'
+        music: 'music/Faded.mp3'
     },
     {
-        img : 'images/ratherbe.jpg',
-        name : 'Rather Be',
+        img: 'images/ratherbe.jpg',
+        name: 'Rather Be',
         // artist : 'Clean Bandit',
-        music : 'music/Rather Be.mp3'
+        music: 'music/Rather Be.mp3'
     }
 ];
 
@@ -57,17 +52,18 @@ let phrase;
 loadTrack(0);
 randomBgColor();
 
-function randomBgColor(){
+function randomBgColor() {
     let hex = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e'];
 
-    function populate(a){
-        for(let i=0; i<6; i++){
+    function populate(a) {
+        for (let i = 0; i < 6; i++) {
             let x = Math.round(Math.random() * 14);
             let y = hex[x];
             a += y;
         }
         return a;
     }
+
     let Color1 = populate('#');
     let Color2 = populate('#');
     let angle = 'to right';
@@ -76,7 +72,7 @@ function randomBgColor(){
 }
 
 function loader(arg) {
-    if(arg) {
+    if (arg) {
         trackArt.classList.add('rotate');
         wave.classList.add('loader');
     } else {
@@ -93,6 +89,8 @@ function loadTrack(trackIndex) {
 }
 
 recordStopBtn.addEventListener("click", () => {
+    const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+
     isRecording ? stopTrack() : recordTrack();
 
     function recordTrack() {
@@ -100,32 +98,36 @@ recordStopBtn.addEventListener("click", () => {
         loader(isRecording);
         recordStopBtn.innerHTML = '<i class="fa fa-stop fa-2x"></i>';
 
-        recognition.start();
-        recognition.interimResults = false;
-        recognition.onend = function () {
-            isRecording = false;
-            loader(isRecording);
-            recordStopBtn.innerHTML = '<i class="fa fa-microphone fa-2x"></i>';
-            console.log("Audio capturing ended");
-        };
-        recognition.onresult = async (event) => {
-            const last = event.results.length - 1;
-            const text = event.results[last][0].transcript;
-            phrase = text;
-            console.log(text);
-        }
+        recognizer.recognizeOnceAsync(
+            function (result) {
+                isRecording = false;
+                loader(isRecording);
+                recordStopBtn.innerHTML = '<i class="fa fa-microphone fa-2x"></i>';
+                phrase = result.privText;
+                recognizer.close();
+
+                console.log("Audio captured successfully");
+                console.log(result);
+                console.log(result.privText);
+            },
+            function (err) {
+                recognizer.close();
+                console.log(err);
+            });
     }
 
     function stopTrack() {
         isRecording = false;
         loader(isRecording);
         recordStopBtn.innerHTML = '<i class="fa fa-microphone fa-2x"></i>';
-        recognition.abort();
-        console.log('aborted recording')
+        recognizer.close();
+        console.log("Audio capturing ended successfully");
     }
 });
 
 playPauseBtn.addEventListener("click", () => {
+    const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
+
     isPlaying ? pauseTrack() : playTrack();
 
     function pauseTrack() {
@@ -138,7 +140,7 @@ playPauseBtn.addEventListener("click", () => {
     }
 
     function playTrack() {
-        if(phrase) {
+        if (phrase) {
             isPlaying = true;
             loader(isPlaying);
             playPauseBtn.innerHTML = '<i class="fa fa-pause-circle fa-5x"></i>';
@@ -173,6 +175,7 @@ playPauseBtn.addEventListener("click", () => {
                     });
                 isPlaying = false;
                 loader(isPlaying);
+                playPauseBtn.innerHTML = '<i class="fa fa-play-circle fa-5x"></i>';
             } else {
                 alert("Sorry, you're browser does not supports speechSynthesis");
             }
