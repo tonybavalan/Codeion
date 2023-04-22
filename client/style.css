@@ -68,8 +68,8 @@ body {
 
 .repeat-track,
 .random-track,
-.playpause-track,
-.prev-track,
+.play-pause-track,
+.record-stop-track,
 .next-track {
     padding: 25px;
     opacity: 0.8;
@@ -78,8 +78,8 @@ body {
 
 .repeat-track:hover,
 .random-track:hover,
-.playpause-track:hover,
-.prev-track:hover,
+.play-pause-track:hover,
+.record-stop-track:hover,
 .next-track:hover {
     opacity: 1.0;
 }

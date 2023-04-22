@@ -1,73 +1,63 @@
-let now_playing = document.querySelector('.now-playing');
-let track_art = document.querySelector('.track-art');
-let track_name = document.querySelector('.track-name');
-let track_artist = document.querySelector('.track-artist');
+import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 
-let playpause_btn = document.querySelector('.playpause-track');
-let next_btn = document.querySelector('.next-track');
-let prev_btn = document.querySelector('.prev-track');
+// web speech api recognition constants
+const speechRecognition = window.speechRecognition || window.webkitSpeechRecognition;
+const recognition = new speechRecognition();
 
-let seek_slider = document.querySelector('.seek_slider');
-let volume_slider = document.querySelector('.volume_slider');
-let curr_time = document.querySelector('.current-time');
-let total_duration = document.querySelector('.total-duration');
-let wave = document.getElementById('wave');
-let randomIcon = document.querySelector('.fa-random');
-let curr_track = document.createElement('audio');
+// azure text-to-speech synthesis constants
+const key = "61e679f7053340578387cb0899e09eb3";
+const region = "centralindia";
 
-let track_index = 0;
-let isPlaying = false;
-let isRandom = false;
-let updateTimer;
+// authorization for Speech service
+const speechConfig = sdk.SpeechConfig.fromSubscription(key, region);
 
-const music_list = [
+// new Speech object
+const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
+
+// global constants
+const recordStopBtn = document.querySelector('.record-stop-track');
+const playPauseBtn = document.querySelector('.play-pause-track');
+const wave = document.getElementById('wave');
+const musicList = [
     {
-        img : 'images/stay.png',
-        name : 'Stay',
-        artist : 'The Kid LAROI, Justin Bieber',
+        img : 'assets/azure.png',
+        name : 'Demo',
+        // artist : 'The Kid LAROI, Justin Bieber',
         music : 'music/stay.mp3'
     },
     {
         img : 'images/fallingdown.jpg',
         name : 'Falling Down',
-        artist : 'Wid Cards',
+        // artist : 'Wid Cards',
         music : 'music/fallingdown.mp3'
     },
     {
         img : 'images/faded.png',
         name : 'Faded',
-        artist : 'Alan Walker',
+        // artist : 'Alan Walker',
         music : 'music/Faded.mp3'
     },
     {
         img : 'images/ratherbe.jpg',
         name : 'Rather Be',
-        artist : 'Clean Bandit',
+        // artist : 'Clean Bandit',
         music : 'music/Rather Be.mp3'
     }
 ];
 
-loadTrack(track_index);
+// variables
+let isRecording = false;
+let isPlaying = false;
+let trackArt = document.querySelector('.track-art');
+let trackName = document.querySelector('.track-name');
+let trackArtist = document.querySelector('.track-artist');
+let phrase;
 
-function loadTrack(track_index){
-    clearInterval(updateTimer);
-    reset();
+// construct function
+loadTrack(0);
+randomBgColor();
 
-    curr_track.src = music_list[track_index].music;
-    curr_track.load();
-
-    track_art.style.backgroundImage = "url(" + music_list[track_index].img + ")";
-    track_name.textContent = music_list[track_index].name;
-    track_artist.textContent = music_list[track_index].artist;
-    now_playing.textContent = "Playing music " + (track_index + 1) + " of " + music_list.length;
-
-    updateTimer = setInterval(setUpdate, 1000);
-
-    curr_track.addEventListener('ended', nextTrack);
-    random_bg_color();
-}
-
-function random_bg_color(){
+function randomBgColor(){
     let hex = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e'];
 
     function populate(a){
@@ -80,91 +70,114 @@ function random_bg_color(){
     }
     let Color1 = populate('#');
     let Color2 = populate('#');
-    var angle = 'to right';
+    let angle = 'to right';
 
     document.body.style.background = 'linear-gradient(' + angle + ',' + Color1 + ', ' + Color2 + ")";
 }
-function reset(){
-    curr_time.textContent = "00:00";
-    total_duration.textContent = "00:00";
-    seek_slider.value = 0;
+
+function loader(arg) {
+    if(arg) {
+        trackArt.classList.add('rotate');
+        wave.classList.add('loader');
+    } else {
+        trackArt.classList.remove('rotate');
+        wave.classList.remove('loader');
+    }
 }
-function randomTrack(){
-    isRandom ? pauseRandom() : playRandom();
+
+function loadTrack(trackIndex) {
+    trackArt.style.backgroundImage = "url(" + musicList[trackIndex].img + ")";
+    trackName.textContent = musicList[trackIndex].name;
+    trackArtist.textContent = musicList[trackIndex].artist;
+    // now_playing.textContent = "Playing music " + (trackIndex + 1) + " of " + music_list.length;
 }
-function playRandom(){
-    isRandom = true;
-    randomIcon.classList.add('randomActive');
-}
-function pauseRandom(){
-    isRandom = false;
-    randomIcon.classList.remove('randomActive');
-}
-function repeatTrack(){
-    loadTrack(track_index);
-    playTrack();
-}
-function playpauseTrack(){
+
+recordStopBtn.addEventListener("click", () => {
+    isRecording ? stopTrack() : recordTrack();
+
+    function recordTrack() {
+        isRecording = true;
+        loader(isRecording);
+        recordStopBtn.innerHTML = '<i class="fa fa-stop fa-2x"></i>';
+
+        recognition.start();
+        recognition.interimResults = false;
+        recognition.onend = function () {
+            isRecording = false;
+            loader(isRecording);
+            recordStopBtn.innerHTML = '<i class="fa fa-microphone fa-2x"></i>';
+            console.log("Audio capturing ended");
+        };
+        recognition.onresult = async (event) => {
+            const last = event.results.length - 1;
+            const text = event.results[last][0].transcript;
+            phrase = text;
+            console.log(text);
+        }
+    }
+
+    function stopTrack() {
+        isRecording = false;
+        loader(isRecording);
+        recordStopBtn.innerHTML = '<i class="fa fa-microphone fa-2x"></i>';
+        recognition.abort();
+        console.log('aborted recording')
+    }
+});
+
+playPauseBtn.addEventListener("click", () => {
     isPlaying ? pauseTrack() : playTrack();
-}
-function playTrack(){
-    curr_track.play();
-    isPlaying = true;
-    track_art.classList.add('rotate');
-    wave.classList.add('loader');
-    playpause_btn.innerHTML = '<i class="fa fa-pause-circle fa-5x"></i>';
-}
-function pauseTrack(){
-    curr_track.pause();
-    isPlaying = false;
-    track_art.classList.remove('rotate');
-    wave.classList.remove('loader');
-    playpause_btn.innerHTML = '<i class="fa fa-play-circle fa-5x"></i>';
-}
-function nextTrack(){
-    if(track_index < music_list.length - 1 && isRandom === false){
-        track_index += 1;
-    }else if(track_index < music_list.length - 1 && isRandom === true){
-        let random_index = Number.parseInt(Math.random() * music_list.length);
-        track_index = random_index;
-    }else{
-        track_index = 0;
-    }
-    loadTrack(track_index);
-    playTrack();
-}
-function prevTrack(){
-    if(track_index > 0){
-        track_index -= 1;
-    }else{
-        track_index = music_list.length -1;
-    }
-    loadTrack(track_index);
-    playTrack();
-}
-function seekTo(){
-    curr_track.currentTime = curr_track.duration * (seek_slider.value / 100);
-}
-function setVolume(){
-    curr_track.volume = volume_slider.value / 100;
-}
-function setUpdate(){
-    let seekPosition = 0;
-    if(!isNaN(curr_track.duration)){
-        seekPosition = curr_track.currentTime * (100 / curr_track.duration);
-        seek_slider.value = seekPosition;
 
-        let currentMinutes = Math.floor(curr_track.currentTime / 60);
-        let currentSeconds = Math.floor(curr_track.currentTime - currentMinutes * 60);
-        let durationMinutes = Math.floor(curr_track.duration / 60);
-        let durationSeconds = Math.floor(curr_track.duration - durationMinutes * 60);
-
-        if(currentSeconds < 10) {currentSeconds = "0" + currentSeconds; }
-        if(durationSeconds < 10) { durationSeconds = "0" + durationSeconds; }
-        if(currentMinutes < 10) {currentMinutes = "0" + currentMinutes; }
-        if(durationMinutes < 10) { durationMinutes = "0" + durationMinutes; }
-
-        curr_time.textContent = currentMinutes + ":" + currentSeconds;
-        total_duration.textContent = durationMinutes + ":" + durationSeconds;
+    function pauseTrack() {
+        isPlaying = false;
+        loader(isPlaying);
+        trackArt.classList.remove('rotate');
+        wave.classList.remove('loader');
+        playPauseBtn.innerHTML = '<i class="fa fa-play-circle fa-5x"></i>';
+        speechSynthesis.cancel();
     }
-}
+
+    function playTrack() {
+        if(phrase) {
+            isPlaying = true;
+            loader(isPlaying);
+            playPauseBtn.innerHTML = '<i class="fa fa-pause-circle fa-5x"></i>';
+
+            let ssml = `<speak version='1.0' xml:lang='en-US' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='http://www.w3.org/2001/mstts' xmlns:emo='http://www.w3.org/2009/10/emotionml'> \r\n \
+                    <voice name='en-Us-AriaNeural'> \r\n \
+                      <mstts:express-as style="whispering"><prosody rate="default" pitch="default" volume="+40.00%">${phrase}</prosody></mstts:express-as> \r\n \
+                    </voice> \r\n \
+                  </speak>`;
+
+            if ('speechSynthesis' in window) {
+                synthesizer.speakSsmlAsync(
+                    ssml,
+                    result => {
+                        console.log(result);
+                        // Success function
+                        // display status
+                        if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+                            // load client-side audio control from Azure response
+                            const blob = new Blob([result.audioData], {type: "audio/mpeg"});
+                            window.URL.createObjectURL(blob);
+                        } else if (result.reason === sdk.ResultReason.Canceled) {
+                            // display Error
+                            console.log(result.errorDetails);
+                        }
+                        // clean up
+                        synthesizer.close();
+                    },
+                    error => {
+                        console.log(error);
+                        synthesizer.close();
+                    });
+                isPlaying = false;
+                loader(isPlaying);
+            } else {
+                alert("Sorry, you're browser does not supports speechSynthesis");
+            }
+        } else {
+            alert("Sorry, no data to play");
+        }
+    }
+});
