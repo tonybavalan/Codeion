@@ -16,8 +16,8 @@ const speechRecognition = window.speechRecognition || window.webkitSpeechRecogni
 const recognition = new speechRecognition();
 
 // Azure text-to-speech synthesis constants
-const key = "61e679f7053340578387cb0899e09eb3";
-const region = "centralindia";
+const key = `${import.meta.env.VITE_AZURE_SPEECH_KEY}`;
+const region = `${import.meta.env.VITE_AZURE_SPEECH_REGION}`;
 // authorization for Speech service
 const speechConfig = sdk.SpeechConfig.fromSubscription(key, region);
 // new Speech object
@@ -52,7 +52,7 @@ mic.addEventListener("click", () => {
     loader(messageDiv);
 
     //fetch data from server -> bots response
-    const response = await fetch('https://codeion-server.onrender.com/', {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -187,7 +187,7 @@ const handleSubmit = async (event) => {
   loader(messageDiv);
 
   //fetch data from server -> bots response
-  const response = await fetch('https://codeion-server.onrender.com/', {
+  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
