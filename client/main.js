@@ -41,7 +41,7 @@ mic.addEventListener("click", () => {
 
     chatContainer.innerHTML += chatStripe(false, text);
 
-    //generate bot's chatStripe
+    //generate bots chatStripe
     let uniqueId = generateUniqueId();
     chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
 
@@ -51,8 +51,8 @@ mic.addEventListener("click", () => {
 
     loader(messageDiv);
 
-    //fetch data from server -> bot's response
-    const response = await fetch('https://codeion-server.onrender.com', {
+    //fetch data from server -> bots response
+    const response = await fetch('https://codeion-server.onrender.com/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -186,8 +186,8 @@ const handleSubmit = async (event) => {
 
   loader(messageDiv);
 
-  //fetch data from server -> bot's response
-  const response = await fetch('https://codeion-server.onrender.com', {
+  //fetch data from server -> bots response
+  const response = await fetch('https://codeion-server.onrender.com/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
