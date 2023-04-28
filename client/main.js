@@ -21,7 +21,7 @@ const region = "centralindia";
 // authorization for Speech service
 const speechConfig = sdk.SpeechConfig.fromSubscription(key, region);
 // new Speech object
-const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
+let synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 
 //Microphone events
 mic.addEventListener("click", () => {
